@@ -3,15 +3,16 @@ package frc.robot;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Robot.RobotRunType;
-import frc.robot.subsystems.drive.Drivetrain;
-import frc.robot.subsystems.drive.DrivetrainIO;
-import frc.robot.subsystems.drive.DrivetrainReal;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.LED;
+import frc.robot.subsystems.Swerve;
+
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -28,26 +29,20 @@ public class RobotContainer {
     private final SendableChooser<String> autoChooser = new SendableChooser<>();
 
     /* Subsystems */
-    private Drivetrain drivetrain;
+    Swerve swerve = new Swerve();
+    Intake intake = new Intake();
+    LED led = new LED(8, 60);
+
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
      */
     public RobotContainer(RobotRunType runtimeType) {
-        SmartDashboard.putData("Choose Auto: ", autoChooser);
-        autoChooser.setDefaultOption("Wait 1 Second", "wait");
-        switch (runtimeType) {
-            case kReal:
-                drivetrain = new Drivetrain(new DrivetrainReal());
-                break;
-            case kSimulation:
-                // drivetrain = new Drivetrain(new DrivetrainSim() {});
-                break;
-            default:
-                drivetrain = new Drivetrain(new DrivetrainIO() {});
-        }
+        led.setDefaultCommand(led.setAllanceColor().ignoringDisable(true));
+
         // Configure the button bindings
         configureButtonBindings();
+
     }
 
     /**
@@ -56,7 +51,12 @@ public class RobotContainer {
      * ({@link edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a
      * {@link edu.wpi.first.wpilibj2.command.button.JoystickButton}.
      */
-    private void configureButtonBindings() {}
+    private void configureButtonBindings() {
+        swerve.setDefaultCommand(swerve.teleopSwerve(driver));
+        driver.y().whileTrue(Commands.parallel(intake.intakeCommand(), led.GreenIntake()));
+        driver.x().whileTrue(intake.outtakeCommand());
+    }
+
 
     /**
      * Gets the user's selected autonomous command.
